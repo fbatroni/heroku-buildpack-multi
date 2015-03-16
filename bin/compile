@@ -14,7 +14,7 @@ unset GIT_DIR
 
 for BUILDPACK in $(cat $1/.buildpacks); do
   dir=$(mktemp -t buildpackXXXXX)
-  rm -rf $dir
+  sudo rm -rf $dir
 
   url=${BUILDPACK%#*}
   branch=${BUILDPACK#*#}
@@ -30,12 +30,14 @@ for BUILDPACK in $(cat $1/.buildpacks); do
       mkdir -p "$dir"
       curl -s "$url" | tar xvz -C "$dir" >/dev/null 2>&1
     else
+      echo "=====> git clone:  $url $dir"
       git clone $url $dir >/dev/null 2>&1
       if [ -f "$dir/.gitmodules" ]; then
         echo "=====> Detected git submodules. Initializing..."
         (cd $dir && git submodule update --init --recursive)
       fi
     fi
+    echo "cd $dir"
     cd $dir
 
     if [ "$branch" != "" ]; then
@@ -43,7 +45,7 @@ for BUILDPACK in $(cat $1/.buildpacks); do
     fi
 
     # we'll get errors later if these are needed and don't exist
-    chmod -f +x $dir/bin/{detect,compile,release} || true
+    sudo chmod -f +x $dir/bin/{detect,compile,release} || true
 
     framework=$($dir/bin/detect $1)
 
